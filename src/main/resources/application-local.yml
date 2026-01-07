@@ -1,0 +1,9 @@
+target:
+  system:
+    endpoint: http://localhost:8080/mock/api
+    timeout: 1000
+    max-retries: 0
+
+logging:
+  level:
+    com.mca: TRACE

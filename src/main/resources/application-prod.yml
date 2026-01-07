@@ -1,0 +1,10 @@
+target:
+  system:
+    endpoint: ${TARGET_ENDPOINT}
+    timeout: 10000
+    max-retries: 5
+
+logging:
+  level:
+    com.mca: INFO
+    org.springframework: WARN

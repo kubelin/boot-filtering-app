@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: mca-parsing-application
+  profiles:
+    active: local
+
+# Target System Configuration
+target:
+  system:
+    endpoint: ${TARGET_ENDPOINT:http://localhost:8080/api/receive}
+    timeout: 5000
+    max-retries: 3
+
+# Logging
+logging:
+  level:
+    com.mca: DEBUG
+    org.springframework: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
