@@ -15,7 +15,7 @@ class McaProcessingServiceTest {
     @Autowired
     private McaProcessingService service;
 
-    private static final String SAMPLE_LOG = "MCA0|20240101|120000|INTEGRATION_TEST";
+    private static final String SAMPLE_LOG = "metadata c0|MCA0|20240101|120000|INTEGRATION_TEST";
 
     @Test
     void testProcess() {

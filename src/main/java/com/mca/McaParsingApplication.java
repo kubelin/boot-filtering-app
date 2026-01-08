@@ -50,31 +50,23 @@ public class McaParsingApplication {
             TargetSystemClient client = context.getBean(TargetSystemClient.class);
 
             // 샘플 MCA 로그 데이터
-            String sampleLog = "MCA0|20240101|120000|SAMPLE_DATA_FOR_TESTING";
+            String sampleLog = "metadata c0|MCA0|20240101|120000|SAMPLE_DATA_FOR_TESTING";
 
-            System.out.println("1. MCA 로그 파싱 테스트");
+            System.out.println("1. MCA 로그 파싱 및 FLD 메시지 빌드 테스트");
             System.out.println("   원본 로그: " + sampleLog);
             System.out.println();
 
-            // 1단계: MCA 로그 파싱
-            McaLogData logData = parser.parse(sampleLog);
-            System.out.println("   ✓ 파싱 성공");
-            System.out.println("   - 메시지 타입: " + logData.getField("messageType"));
-            System.out.println("   - 날짜: " + logData.getField("date"));
-            System.out.println("   - 시간: " + logData.getField("time"));
-            System.out.println("   - 바디: " + logData.getField("body"));
-            System.out.println();
-
-            // 2단계: FLD 메시지 빌드
-            System.out.println("2. FLD 메시지 빌드 테스트");
-            FldMessage fldMessage = builder.buildMessage(logData);
-            System.out.println("   ✓ FLD 메시지 빌드 성공");
+            // FLD 메시지 빌드 (공백 포함 그대로)
+            FldMessage fldMessage = builder.buildMessage(sampleLog);
+            System.out.println("   ✓ FLD 메시지 빌드 성공 (공백 포함 그대로)");
+            System.out.println("   - 헤더부: " + fldMessage.header());
+            System.out.println("   - 데이터부: " + fldMessage.data());
             System.out.println("   - 메시지 길이: " + fldMessage.totalLength() + " bytes");
             System.out.println("   - FLD 문자열: " + fldMessage.toFldString());
             System.out.println();
 
-            // 3단계: 타겟 시스템 호출
-            System.out.println("3. 타겟 시스템 호출 테스트");
+            // 2단계: 타겟 시스템 호출
+            System.out.println("2. 타겟 시스템 호출 테스트");
             TargetSystemResponse response = client.send(fldMessage);
             System.out.println("   ✓ 타겟 시스템 호출 성공");
             System.out.println("   - Success: " + response.success());

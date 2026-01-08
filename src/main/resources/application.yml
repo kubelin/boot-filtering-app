@@ -4,6 +4,18 @@ spring:
   profiles:
     active: local
 
+# MCA Parser Configuration
+mca:
+  parser:
+    delimiter: "|"              # 필드 구분자
+    data-prefix: "c0"           # 데이터 시작 마커
+    header-column-count: 4      # 헤더 컬럼 개수 (변경 가능: 4, 10, 15, 20...)
+    header-field-names:         # 헤더 필드명 (옵션)
+      - "length"
+      - "messageType"
+      - "transactionId"
+      - "code"
+
 # Target System Configuration
 target:
   system:

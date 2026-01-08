@@ -1,45 +1,45 @@
 package com.mca.fld;
 
-import com.mca.fld.model.FldBody;
-import com.mca.fld.model.FldHeader;
 import com.mca.fld.model.FldMessage;
-import com.mca.parser.model.McaLogData;
+import com.mca.parser.McaMessageParser;
+import com.mca.parser.model.McaMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 /**
- * FLD 메시지 빌더
+ * FLD 메시지 빌더 (간소화 버전)
+ * - 공백 포함 고정길이 데이터를 그대로 사용
+ * - 불필요한 패딩, 변환 제거
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class FldMessageBuilder {
 
-    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
-        DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private final McaMessageParser parser;
 
     /**
-     * MCA 로그 데이터로부터 FLD 메시지 생성
+     * MCA 로그로부터 FLD 메시지 생성
+     *
+     * @param rawLog MCA 로그 원본
+     * @return FLD 메시지 (공백 포함 그대로)
      */
-    public FldMessage buildMessage(McaLogData logData) {
-        log.debug("FLD 메시지 빌드 시작");
+    public FldMessage buildMessage(String rawLog) {
+        log.debug("FLD 메시지 빌드 시작: {} bytes", rawLog.length());
 
         try {
-            // 헤더 생성
-            FldHeader header = buildHeader(logData);
+            // MCA 파싱
+            McaMessage mcaMessage = parser.parse(rawLog);
 
-            // 바디 생성
-            FldBody body = buildBody(logData);
+            // 헤더부/데이터부 그대로 사용 (공백 포함)
+            String headerPart = mcaMessage.header();
+            String dataPart = mcaMessage.body();
 
-            FldMessage message = new FldMessage(header, body, LocalDateTime.now());
+            FldMessage fldMessage = new FldMessage(headerPart, dataPart);
 
-            log.debug("FLD 메시지 빌드 완료: {} bytes", message.totalLength());
-            return message;
+            log.debug("FLD 메시지 빌드 완료: {} bytes", fldMessage.totalLength());
+            return fldMessage;
 
         } catch (Exception e) {
             log.error("FLD 메시지 빌드 실패", e);
@@ -48,62 +48,20 @@ public class FldMessageBuilder {
     }
 
     /**
-     * FLD 헤더 생성
+     * MCA 메시지로부터 FLD 메시지 생성
+     *
+     * @param mcaMessage 파싱된 MCA 메시지
+     * @return FLD 메시지
      */
-    private FldHeader buildHeader(McaLogData logData) {
-        String messageType = logData.getField("messageType");
-        if (messageType == null) {
-            messageType = "MCA0";
-        }
+    public FldMessage buildMessage(McaMessage mcaMessage) {
+        log.debug("FLD 메시지 빌드 시작 (McaMessage)");
 
-        // 거래 ID 생성 (UUID 앞 20자리)
-        String transactionId = UUID.randomUUID().toString()
-            .replace("-", "")
-            .substring(0, 20);
+        String headerPart = mcaMessage.header();
+        String dataPart = mcaMessage.body();
 
-        // 타임스탬프 생성
-        String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
+        FldMessage fldMessage = new FldMessage(headerPart, dataPart);
 
-        // 시스템 코드
-        String systemCode = "MCASYS01";
-
-        return new FldHeader(
-            padRight(messageType, 4),
-            padRight(transactionId, 20),
-            padRight(timestamp, 14),
-            padRight(systemCode, 8)
-        );
-    }
-
-    /**
-     * FLD 바디 생성
-     */
-    private FldBody buildBody(McaLogData logData) {
-        String body = logData.getField("body");
-        if (body == null) {
-            body = "";
-        }
-
-        Map<String, String> attributes = new HashMap<>();
-        attributes.put("source", "MCA_LOG");
-        attributes.put("parseTime", LocalDateTime.now().toString());
-
-        // 레코드 개수는 기본 1개
-        int recordCount = 1;
-
-        return new FldBody(body, recordCount, attributes);
-    }
-
-    /**
-     * 문자열 우측 패딩
-     */
-    private String padRight(String value, int length) {
-        if (value == null) {
-            value = "";
-        }
-        if (value.length() >= length) {
-            return value.substring(0, length);
-        }
-        return String.format("%-" + length + "s", value);
+        log.debug("FLD 메시지 빌드 완료: {} bytes", fldMessage.totalLength());
+        return fldMessage;
     }
 }
