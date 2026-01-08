@@ -19,14 +19,14 @@ public record McaMessage(
     Instant timestamp
 ) {
     /**
-     * 전문 통신용 String 출력
-     * @return "헤더|바디" 또는 "헤더" (바디가 없는 경우)
+     * 전문 통신용 String 출력 (delimiter 제거, 공백 보존)
+     * @return "헤더바디" (delimiter 없이 연결, 공백 그대로)
      */
     public String toFormatted() {
         if (body == null || body.isEmpty()) {
             return header;
         }
-        return header + "|" + body;
+        return header + body;
     }
 
     /**

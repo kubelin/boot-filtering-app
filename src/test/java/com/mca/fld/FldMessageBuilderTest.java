@@ -21,7 +21,7 @@ class FldMessageBuilderTest {
     private McaMessageParser parser;
 
     @Test
-    @DisplayName("MCA 로그로부터 FLD 메시지 생성 (공백 포함 그대로)")
+    @DisplayName("MCA 로그로부터 FLD 메시지 생성 (delimiter 제거, 공백 보존)")
     void testBuildMessage_fromRawLog() {
         // Given
         String rawLog = "metadata c0|100|A01|TX123|200|data1|data2|data3";
@@ -29,10 +29,10 @@ class FldMessageBuilderTest {
         // When
         FldMessage message = builder.buildMessage(rawLog);
 
-        // Then
+        // Then - delimiter 제거, 공백 보존
         assertThat(message).isNotNull();
-        assertThat(message.header()).isEqualTo("100|A01|TX123|200");
-        assertThat(message.data()).isEqualTo("data1|data2|data3");
+        assertThat(message.header()).isEqualTo("100A01TX123200");
+        assertThat(message.data()).isEqualTo("data1data2data3");
         assertThat(message.totalLength()).isGreaterThan(0);
     }
 
@@ -94,8 +94,8 @@ class FldMessageBuilderTest {
         FldMessage message = builder.buildMessage(rawLog);
         String delimitedString = message.toDelimitedString();
 
-        // Then
+        // Then - header와 data 사이에만 delimiter
         assertThat(delimitedString).contains("|");
-        assertThat(delimitedString).isEqualTo("h1|h2|h3|h4|body");
+        assertThat(delimitedString).isEqualTo("h1h2h3h4|body");
     }
 }

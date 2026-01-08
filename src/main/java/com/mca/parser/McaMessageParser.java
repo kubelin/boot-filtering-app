@@ -27,9 +27,10 @@ public class McaMessageParser {
 
     /**
      * MCA 로그 파싱 → String 출력 (전문 통신용)
+     * delimiter는 제거하고 공백은 그대로 유지
      *
      * @param rawLog MCA 로그 원본
-     * @return "헤더1|헤더2|...|바디1|바디2|..."
+     * @return "헤더1헤더2...바디1바디2..." (delimiter 제거, 공백 보존)
      */
     public String parseToString(String rawLog) {
         log.debug("MCA 로그 파싱 시작 (String): {} bytes", rawLog.length());
@@ -40,8 +41,8 @@ public class McaMessageParser {
         // 2. delimiter로 분리
         String[] fields = splitFields(data);
 
-        // 3. 그대로 조합해서 반환 (헤더+바디 전체)
-        String result = String.join(config.getDelimiter(), fields);
+        // 3. delimiter 없이 연결 (공백은 그대로 유지)
+        String result = String.join("", fields);
 
         log.debug("파싱 완료 (String): {} 필드, {} bytes", fields.length, result.length());
         return result;
@@ -83,10 +84,9 @@ public class McaMessageParser {
         String[] headerFields = extractHeaderFields(fields, headerCount);
         String[] bodyFields = extractBodyFields(fields, headerCount);
 
-        // 4. 헤더/바디 문자열 생성
-        String delimiter = config.getDelimiter();
-        String headerStr = String.join(delimiter, headerFields);
-        String bodyStr = String.join(delimiter, bodyFields);
+        // 4. 헤더/바디 문자열 생성 (delimiter 제거, 공백 보존)
+        String headerStr = String.join("", headerFields);
+        String bodyStr = String.join("", bodyFields);
 
         // 5. 필드 맵 생성 (JSON용)
         Map<String, String> headerMap = buildHeaderMap(headerFields);

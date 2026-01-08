@@ -27,7 +27,7 @@ class McaMessageParserTest {
     }
 
     @Test
-    @DisplayName("기본 파싱 - String 출력")
+    @DisplayName("기본 파싱 - String 출력 (delimiter 제거)")
     void parseToString_기본() {
         // Given
         String rawLog = "metadata c0|100|A01|TX123|200|bodyData1|bodyData2";
@@ -35,12 +35,12 @@ class McaMessageParserTest {
         // When
         String result = parser.parseToString(rawLog);
 
-        // Then
-        assertThat(result).isEqualTo("100|A01|TX123|200|bodyData1|bodyData2");
+        // Then - delimiter 제거, 공백 보존
+        assertThat(result).isEqualTo("100A01TX123200bodyData1bodyData2");
     }
 
     @Test
-    @DisplayName("기본 파싱 - 객체 출력")
+    @DisplayName("기본 파싱 - 객체 출력 (delimiter 제거)")
     void parse_기본() {
         // Given
         String rawLog = "metadata c0|100|A01|TX123|200|bodyData1|bodyData2";
@@ -48,9 +48,9 @@ class McaMessageParserTest {
         // When
         McaMessage result = parser.parse(rawLog);
 
-        // Then
-        assertThat(result.header()).isEqualTo("100|A01|TX123|200");
-        assertThat(result.body()).isEqualTo("bodyData1|bodyData2");
+        // Then - delimiter 제거, 공백 보존
+        assertThat(result.header()).isEqualTo("100A01TX123200");
+        assertThat(result.body()).isEqualTo("bodyData1bodyData2");
         assertThat(result.headerFields()).hasSize(4);
         assertThat(result.headerFields().get("length")).isEqualTo("100");
         assertThat(result.headerFields().get("messageType")).isEqualTo("A01");
@@ -58,7 +58,7 @@ class McaMessageParserTest {
     }
 
     @Test
-    @DisplayName("헤더만 있는 경우")
+    @DisplayName("헤더만 있는 경우 (delimiter 제거)")
     void parse_헤더만() {
         // Given
         String rawLog = "c0|100|A01|TX123|200";
@@ -66,8 +66,8 @@ class McaMessageParserTest {
         // When
         McaMessage result = parser.parse(rawLog);
 
-        // Then
-        assertThat(result.header()).isEqualTo("100|A01|TX123|200");
+        // Then - delimiter 제거
+        assertThat(result.header()).isEqualTo("100A01TX123200");
         assertThat(result.body()).isEmpty();
         assertThat(result.bodyFields()).isEmpty();
     }
@@ -110,7 +110,7 @@ class McaMessageParserTest {
     }
 
     @Test
-    @DisplayName("커스텀 delimiter 파싱 (쉼표)")
+    @DisplayName("커스텀 delimiter 파싱 (쉼표) - delimiter 제거")
     void parse_커스텀delimiter() {
         // Given
         config.setDelimiter(",");
@@ -122,12 +122,12 @@ class McaMessageParserTest {
         // When
         String result = parser.parseToString(rawLog);
 
-        // Then
-        assertThat(result).isEqualTo("h1,h2,h3,body1,body2");
+        // Then - delimiter 제거
+        assertThat(result).isEqualTo("h1h2h3body1body2");
     }
 
     @Test
-    @DisplayName("실제 샘플 데이터 파싱")
+    @DisplayName("실제 샘플 데이터 파싱 (delimiter 제거)")
     void parse_실제샘플() {
         // Given
         String rawLog = "(2025-12-26 13:15:17.675480] HYBRID<GROUP_BNEXIA> < 30653> MCA>HOST ERRI] " +
@@ -137,8 +137,8 @@ class McaMessageParserTest {
         // When
         McaMessage result = parser.parse(rawLog);
 
-        // Then
-        assertThat(result.header()).isEqualTo("0000000578|A01|000000007c3f75d90000000011f0e211|84");
+        // Then - delimiter 제거
+        assertThat(result.header()).isEqualTo("0000000578A01000000007c3f75d90000000011f0e21184");
         assertThat(result.headerFields().get("length")).isEqualTo("0000000578");
         assertThat(result.headerFields().get("messageType")).isEqualTo("A01");
         assertThat(result.bodyFields()).contains("nzeustest", "nzeustest", "", "0");
