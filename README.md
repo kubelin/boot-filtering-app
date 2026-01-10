@@ -5,6 +5,7 @@ MCA 로그를 파싱하여 FLD(Fixed Length Data) 형식으로 변환하는 **�
 ## ✨ 주요 특징
 
 - **간소화된 아키텍처**: 복잡한 3계층 → 단일 파서 (67% 코드 감소)
+- **명확한 데이터 구간**: `:|` 시작 마커와 `[EXT]` 종료 마커로 데이터 영역 정의
 - **유연한 설정**: 헤더 개수 제한 없음 (4개, 10개, 15개, 20개...)
 - **공백 보존**: 고정길이 데이터의 공백을 데이터로 취급
 - **커스텀 delimiter**: `|`, `,`, `;` 등 자유롭게 설정 가능
@@ -98,7 +99,8 @@ java -jar build/libs/mca-parsing-application-1.0.0.jar
 mca:
   parser:
     delimiter: "|"              # 필드 구분자
-    data-prefix: "c0"           # 데이터 시작 마커
+    data-prefix: ":|"           # 데이터 시작 마커
+    data-suffix: "[EXT]"        # 데이터 종료 마커
     header-column-count: 4      # 헤더 컬럼 개수
     header-field-names:         # 헤더 필드명 (옵션)
       - "length"
@@ -151,12 +153,12 @@ mca:
 ```bash
 curl -X POST http://localhost:8080/api/v1/mca/parse \
   -H "Content-Type: text/plain" \
-  -d "metadata c0|0000000578|A01|TX123|84|data1|data2|data3"
+  -d "metadata :|0000000578|A01|TX123|84|data1|data2|data3[EXT]"
 ```
 
 **응답**:
 ```
-0000000578|A01|TX123|84|data1|data2|data3
+0000000578A01TX12384data1data2data3
 ```
 
 ### 2️⃣ JSON 출력
@@ -166,7 +168,7 @@ curl -X POST http://localhost:8080/api/v1/mca/parse \
 ```bash
 curl -X POST http://localhost:8080/api/v1/mca/parse/json \
   -H "Content-Type: text/plain" \
-  -d "metadata c0|0000000578|A01|TX123|84|data1|data2|data3"
+  -d "metadata :|0000000578|A01|TX123|84|data1|data2|data3[EXT]"
 ```
 
 **응답**:
@@ -190,12 +192,12 @@ curl -X POST http://localhost:8080/api/v1/mca/parse/json \
 ```bash
 curl -X POST "http://localhost:8080/api/v1/mca/parse/custom?delimiter=," \
   -H "Content-Type: text/plain" \
-  -d "metadata c0,100,A01,TX123,200,body1,body2"
+  -d "metadata :|,100,A01,TX123,200,body1,body2[EXT]"
 ```
 
 **응답**:
 ```
-100,A01,TX123,200,body1,body2
+100A01TX123200body1body2
 ```
 
 ### 4️⃣ 기존 처리 플로우 (파싱 + FLD + 전송)
@@ -205,7 +207,7 @@ curl -X POST "http://localhost:8080/api/v1/mca/parse/custom?delimiter=," \
 ```bash
 curl -X POST http://localhost:8080/api/v1/mca/process \
   -H "Content-Type: text/plain" \
-  -d "metadata c0|100|A01|TX123|200|data"
+  -d "metadata :|100|A01|TX123|200|data[EXT]"
 ```
 
 ---
@@ -215,13 +217,13 @@ curl -X POST http://localhost:8080/api/v1/mca/process \
 ```
 ┌─────────────────────────────────────────────────┐
 │  MCA 로그 입력                                   │
-│  c0|field1|field2|field3|field4|data1|data2    │
+│  :|field1|field2|field3|field4|data1|data2[EXT]│
 └──────────────────┬──────────────────────────────┘
                    │
                    ▼
 ┌─────────────────────────────────────────────────┐
 │  McaMessageParser                               │
-│  - c0 이후 데이터 추출                          │
+│  - :| ~ [EXT] 데이터 추출                       │
 │  - delimiter로 분리                             │
 │  - 헤더/바디 분리 (설정 기반)                   │
 │  - 공백 포함 그대로 처리                        │
@@ -303,12 +305,12 @@ FldMessageBuilder → FldMessage (공백 그대로)
 
 **입력**:
 ```
-c0|100   |A01  |TX123              |200     |data with spaces
+:|100   |A01  |TX123              |200     |data with spaces[EXT]
 ```
 
-**출력** (공백 그대로 유지):
+**출력** (공백 그대로 유지, delimiter 제거):
 ```
-100   |A01  |TX123              |200     |data with spaces
+100   A01  TX123              200     data with spaces
 ```
 
 ### 2. 유연한 헤더 설정
@@ -336,13 +338,13 @@ header-column-count: 4    # 또는 10, 15, 20, 50...
 
 ### 1. "데이터 시작 마커를 찾을 수 없습니다" 오류
 
-**원인**: 로그에 `c0`가 없음
+**원인**: 로그에 `:|`가 없음
 
 **해결**:
 ```yaml
 mca:
   parser:
-    data-prefix: "your-prefix"  # c0 대신 다른 마커
+    data-prefix: "your-prefix"  # :| 대신 다른 마커
 ```
 
 ### 2. 헤더/바디 분리가 잘못됨

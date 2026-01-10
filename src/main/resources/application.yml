@@ -8,7 +8,8 @@ spring:
 mca:
   parser:
     delimiter: "|"              # 필드 구분자
-    data-prefix: "c0"           # 데이터 시작 마커
+    data-prefix: ":|"           # 데이터 시작 마커
+    data-suffix: "[EXT]"        # 데이터 종료 마커
     header-column-count: 4      # 헤더 컬럼 개수 (변경 가능: 4, 10, 15, 20...)
     header-field-names:         # 헤더 필드명 (옵션)
       - "length"

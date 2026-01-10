@@ -19,7 +19,8 @@ class McaMessageParserTest {
     void setUp() {
         config = new McaParserConfig();
         config.setDelimiter("|");
-        config.setDataPrefix("c0");
+        config.setDataPrefix(":|");
+        config.setDataSuffix("[EXT]");
         config.setHeaderColumnCount(4);
         config.setHeaderFieldNames(List.of("length", "messageType", "transactionId", "code"));
 
@@ -30,7 +31,7 @@ class McaMessageParserTest {
     @DisplayName("기본 파싱 - String 출력 (delimiter 제거)")
     void parseToString_기본() {
         // Given
-        String rawLog = "metadata c0|100|A01|TX123|200|bodyData1|bodyData2";
+        String rawLog = "metadata :|100|A01|TX123|200|bodyData1|bodyData2[EXT]";
 
         // When
         String result = parser.parseToString(rawLog);
@@ -43,7 +44,7 @@ class McaMessageParserTest {
     @DisplayName("기본 파싱 - 객체 출력 (delimiter 제거)")
     void parse_기본() {
         // Given
-        String rawLog = "metadata c0|100|A01|TX123|200|bodyData1|bodyData2";
+        String rawLog = "metadata :|100|A01|TX123|200|bodyData1|bodyData2[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);
@@ -61,7 +62,7 @@ class McaMessageParserTest {
     @DisplayName("헤더만 있는 경우 (delimiter 제거)")
     void parse_헤더만() {
         // Given
-        String rawLog = "c0|100|A01|TX123|200";
+        String rawLog = ":|100|A01|TX123|200[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);
@@ -79,7 +80,7 @@ class McaMessageParserTest {
         config.setHeaderColumnCount(10);
         parser = new McaMessageParser(config);
 
-        String rawLog = "c0|1|2|3|4|5|6|7|8|9|10|b1|b2|b3";
+        String rawLog = ":|1|2|3|4|5|6|7|8|9|10|b1|b2|b3[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);
@@ -97,7 +98,7 @@ class McaMessageParserTest {
         config.setHeaderFieldNames(null);  // 자동 생성 모드
         parser = new McaMessageParser(config);
 
-        String rawLog = "c0|h1|h2|h3|h4|h5|h6|h7|h8|h9|h10|h11|h12|h13|h14|h15|body1|body2";
+        String rawLog = ":|h1|h2|h3|h4|h5|h6|h7|h8|h9|h10|h11|h12|h13|h14|h15|body1|body2[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);
@@ -117,7 +118,7 @@ class McaMessageParserTest {
         config.setHeaderColumnCount(3);
         parser = new McaMessageParser(config);
 
-        String rawLog = "c0,h1,h2,h3,body1,body2";
+        String rawLog = ":|,h1,h2,h3,body1,body2[EXT]";
 
         // When
         String result = parser.parseToString(rawLog);
@@ -131,8 +132,8 @@ class McaMessageParserTest {
     void parse_실제샘플() {
         // Given
         String rawLog = "(2025-12-26 13:15:17.675480] HYBRID<GROUP_BNEXIA> < 30653> MCA>HOST ERRI] " +
-                "[pfaa003p ==pfaa003p:A01):c0|0000000578|A01|000000007c3f75d90000000011f0e211|84|" +
-                "nzeustest|nzeustest||0|||045.082.011.148";
+                "[pfaa003p ==pfaa003p:A01):|0000000578|A01|000000007c3f75d90000000011f0e211|84|" +
+                "nzeustest|nzeustest||0|||045.082.011.148[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);
@@ -148,7 +149,7 @@ class McaMessageParserTest {
     @DisplayName("JSON 출력")
     void parseToJson() {
         // Given
-        String rawLog = "c0|100|A01|TX123|200|data1|data2";
+        String rawLog = ":|100|A01|TX123|200|data1|data2[EXT]";
 
         // When
         String json = parser.parseToJson(rawLog);
@@ -164,7 +165,7 @@ class McaMessageParserTest {
     @DisplayName("빈 바디 필드 처리")
     void parse_빈필드() {
         // Given
-        String rawLog = "c0|100|A01|TX123|200||empty||field";
+        String rawLog = ":|100|A01|TX123|200||empty||field[EXT]";
 
         // When
         McaMessage result = parser.parse(rawLog);

@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 /**
  * MCA 메시지 파서
- * - c0 이후 데이터를 delimiter로 분리
+ * - :| 이후 [EXT] 이전 데이터를 delimiter로 분리
  * - 설정된 개수만큼 헤더/바디 분리
  * - String 또는 JSON 형식으로 출력
  */
@@ -35,7 +35,7 @@ public class McaMessageParser {
     public String parseToString(String rawLog) {
         log.debug("MCA 로그 파싱 시작 (String): {} bytes", rawLog.length());
 
-        // 1. c0 이후 데이터 추출
+        // 1. :| 이후 [EXT] 이전 데이터 추출
         String data = extractData(rawLog);
 
         // 2. delimiter로 분리
@@ -73,7 +73,7 @@ public class McaMessageParser {
     public McaMessage parse(String rawLog) {
         log.debug("MCA 로그 파싱 시작 (Object): {} bytes", rawLog.length());
 
-        // 1. c0 이후 데이터 추출
+        // 1. :| 이후 [EXT] 이전 데이터 추출
         String data = extractData(rawLog);
 
         // 2. delimiter로 분리
@@ -104,20 +104,27 @@ public class McaMessageParser {
     }
 
     /**
-     * c0 이후 데이터 추출
+     * :| 이후 [EXT] 이전 데이터 추출
      */
     private String extractData(String rawLog) {
         String prefix = config.getDataPrefix();
-        int dataStart = rawLog.indexOf(prefix);
+        String suffix = config.getDataSuffix();
 
+        int dataStart = rawLog.indexOf(prefix);
         if (dataStart == -1) {
             throw new IllegalArgumentException(
                 "데이터 시작 마커를 찾을 수 없습니다: " + prefix
             );
         }
 
-        // c0 이후부터 추출
+        // :| 이후부터 추출
         String afterPrefix = rawLog.substring(dataStart + prefix.length());
+
+        // [EXT] 위치 찾기
+        int dataEnd = afterPrefix.indexOf(suffix);
+        if (dataEnd != -1) {
+            afterPrefix = afterPrefix.substring(0, dataEnd);
+        }
 
         // 시작이 delimiter면 제거
         String delimiter = config.getDelimiter();

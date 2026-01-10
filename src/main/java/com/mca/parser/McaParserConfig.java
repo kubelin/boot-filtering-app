@@ -20,9 +20,14 @@ public class McaParserConfig {
     private String delimiter = "|";
 
     /**
-     * 데이터 시작 마커 (기본: c0)
+     * 데이터 시작 마커 (기본: :|)
      */
-    private String dataPrefix = "c0";
+    private String dataPrefix = ":|";
+
+    /**
+     * 데이터 종료 마커 (기본: [EXT])
+     */
+    private String dataSuffix = "[EXT]";
 
     /**
      * 헤더 컬럼 개수 (고정값, 제한 없음)

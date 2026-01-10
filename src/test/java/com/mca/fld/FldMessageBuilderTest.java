@@ -24,7 +24,7 @@ class FldMessageBuilderTest {
     @DisplayName("MCA 로그로부터 FLD 메시지 생성 (delimiter 제거, 공백 보존)")
     void testBuildMessage_fromRawLog() {
         // Given
-        String rawLog = "metadata c0|100|A01|TX123|200|data1|data2|data3";
+        String rawLog = "metadata :|100|A01|TX123|200|data1|data2|data3[EXT]";
 
         // When
         FldMessage message = builder.buildMessage(rawLog);
@@ -40,7 +40,7 @@ class FldMessageBuilderTest {
     @DisplayName("McaMessage로부터 FLD 메시지 생성")
     void testBuildMessage_fromMcaMessage() {
         // Given
-        String rawLog = "c0|h1|h2|h3|h4|body1|body2";
+        String rawLog = ":|h1|h2|h3|h4|body1|body2[EXT]";
         McaMessage mcaMessage = parser.parse(rawLog);
 
         // When
@@ -56,7 +56,7 @@ class FldMessageBuilderTest {
     @DisplayName("FLD 문자열 변환 (구분자 없음)")
     void testFldStringFormat() {
         // Given
-        String rawLog = "c0|header1|header2|header3|header4|bodyData";
+        String rawLog = ":|header1|header2|header3|header4|bodyData[EXT]";
 
         // When
         FldMessage message = builder.buildMessage(rawLog);
@@ -73,7 +73,7 @@ class FldMessageBuilderTest {
     @DisplayName("공백 포함 데이터 처리")
     void testWithWhitespace() {
         // Given - 공백 포함 데이터
-        String rawLog = "c0|100   |A01  |TX123              |200     |data with spaces";
+        String rawLog = ":|100   |A01  |TX123              |200     |data with spaces[EXT]";
 
         // When
         FldMessage message = builder.buildMessage(rawLog);
@@ -88,7 +88,7 @@ class FldMessageBuilderTest {
     @DisplayName("구분자 포함 문자열 (디버깅용)")
     void testDelimitedString() {
         // Given
-        String rawLog = "c0|h1|h2|h3|h4|body";
+        String rawLog = ":|h1|h2|h3|h4|body[EXT]";
 
         // When
         FldMessage message = builder.buildMessage(rawLog);
