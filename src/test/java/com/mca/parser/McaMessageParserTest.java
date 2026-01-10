@@ -189,4 +189,71 @@ class McaMessageParserTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("데이터 시작 마커를 찾을 수 없습니다");
     }
+
+    @Test
+    @DisplayName("헤더 필드 고정 길이 패딩 (짧은 값)")
+    void parse_고정길이패딩_짧은값() {
+        // Given
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("length", 10),
+            new com.mca.parser.model.HeaderFieldSpec("messageType", 5),
+            new com.mca.parser.model.HeaderFieldSpec("code", 3)
+        ));
+        config.setHeaderColumnCount(3);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|100|A01|84[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then - 값이 고정 길이보다 작으면 공백 패딩
+        assertThat(result.headerFields()).hasSize(3);
+        assertThat(result.headerFields().get("length")).isEqualTo("100       ");  // 10자리
+        assertThat(result.headerFields().get("messageType")).isEqualTo("A01  ");  // 5자리
+        assertThat(result.headerFields().get("code")).isEqualTo("84 ");           // 3자리
+    }
+
+    @Test
+    @DisplayName("헤더 필드 고정 길이 패딩 (긴 값)")
+    void parse_고정길이패딩_긴값() {
+        // Given
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("field1", 5),
+            new com.mca.parser.model.HeaderFieldSpec("field2", 3)
+        ));
+        config.setHeaderColumnCount(2);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|veryLongValue|12345[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then - 값이 고정 길이보다 크면 그대로 유지
+        assertThat(result.headerFields()).hasSize(2);
+        assertThat(result.headerFields().get("field1")).isEqualTo("veryLongValue");  // 원본 유지
+        assertThat(result.headerFields().get("field2")).isEqualTo("12345");           // 원본 유지
+    }
+
+    @Test
+    @DisplayName("헤더 필드 고정 길이 0 (패딩 안 함)")
+    void parse_고정길이0_패딩안함() {
+        // Given
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("field1", 0),
+            new com.mca.parser.model.HeaderFieldSpec("field2", 0)
+        ));
+        config.setHeaderColumnCount(2);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|abc|12[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then - 길이 0이면 패딩 안 함
+        assertThat(result.headerFields().get("field1")).isEqualTo("abc");
+        assertThat(result.headerFields().get("field2")).isEqualTo("12");
+    }
 }

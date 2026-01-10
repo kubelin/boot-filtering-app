@@ -164,24 +164,68 @@ public class McaMessageParser {
 
     /**
      * 헤더 필드 맵 생성 (JSON용)
+     * - headerFieldSpecs가 있으면 고정 길이 패딩 적용
+     * - 없으면 기존 방식 (headerFieldNames 또는 자동 생성)
      */
     private Map<String, String> buildHeaderMap(String[] headerFields) {
         Map<String, String> map = new LinkedHashMap<>();
-        List<String> fieldNames = config.getHeaderFieldNames();
 
-        for (int i = 0; i < headerFields.length; i++) {
-            String fieldName;
+        // 1. headerFieldSpecs 우선 사용 (고정 길이 패딩)
+        if (config.getHeaderFieldSpecs() != null && !config.getHeaderFieldSpecs().isEmpty()) {
+            var fieldSpecs = config.getHeaderFieldSpecs();
 
-            // 설정된 필드명이 있으면 사용, 없으면 자동 생성
-            if (fieldNames != null && i < fieldNames.size()) {
-                fieldName = fieldNames.get(i);
-            } else {
-                fieldName = "header" + i;
+            for (int i = 0; i < headerFields.length; i++) {
+                String fieldName;
+                int fieldLength = 0;
+
+                // Spec에서 필드명과 길이 가져오기
+                if (i < fieldSpecs.size()) {
+                    fieldName = fieldSpecs.get(i).getName();
+                    fieldLength = fieldSpecs.get(i).getLength();
+                } else {
+                    fieldName = "header" + i;
+                }
+
+                // 값에 공백 패딩 적용
+                String paddedValue = padValue(headerFields[i], fieldLength);
+                map.put(fieldName, paddedValue);
             }
+        }
+        // 2. 기존 방식 (headerFieldNames 또는 자동 생성)
+        else {
+            var fieldNames = config.getHeaderFieldNames();
 
-            map.put(fieldName, headerFields[i]);
+            for (int i = 0; i < headerFields.length; i++) {
+                String fieldName;
+
+                if (fieldNames != null && i < fieldNames.size()) {
+                    fieldName = fieldNames.get(i);
+                } else {
+                    fieldName = "header" + i;
+                }
+
+                map.put(fieldName, headerFields[i]);
+            }
         }
 
         return map;
+    }
+
+    /**
+     * 값에 공백 패딩 적용
+     * - 값의 길이가 지정된 길이보다 작으면 오른쪽에 공백 추가
+     * - 값의 길이가 지정된 길이보다 크거나 같으면 그대로 반환
+     *
+     * @param value 원본 값
+     * @param length 목표 길이 (0이면 패딩 안 함)
+     * @return 패딩된 값
+     */
+    private String padValue(String value, int length) {
+        if (length <= 0 || value.length() >= length) {
+            return value;
+        }
+
+        // 오른쪽에 공백 추가
+        return String.format("%-" + length + "s", value);
     }
 }

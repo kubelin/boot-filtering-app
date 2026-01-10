@@ -11,11 +11,25 @@ mca:
     data-prefix: ":|"           # 데이터 시작 마커
     data-suffix: "[EXT]"        # 데이터 종료 마커
     header-column-count: 4      # 헤더 컬럼 개수 (변경 가능: 4, 10, 15, 20...)
-    header-field-names:         # 헤더 필드명 (옵션)
-      - "length"
-      - "messageType"
-      - "transactionId"
-      - "code"
+
+    # 헤더 필드 사양 (이름 + 고정 길이)
+    # 파싱된 값이 길이보다 작으면 공백 패딩
+    header-field-specs:
+      - name: "length"
+        length: 10
+      - name: "messageType"
+        length: 3
+      - name: "transactionId"
+        length: 36
+      - name: "code"
+        length: 4
+
+    # 기존 방식 (deprecated, header-field-specs 사용 권장)
+    # header-field-names:
+    #   - "length"
+    #   - "messageType"
+    #   - "transactionId"
+    #   - "code"
 
 # Target System Configuration
 target:
