@@ -29,9 +29,12 @@ class FldMessageBuilderTest {
         // When
         FldMessage message = builder.buildMessage(rawLog);
 
-        // Then - delimiter 제거, 공백 보존
+        // Then - delimiter 제거, 고정 길이 패딩 적용
         assertThat(message).isNotNull();
-        assertThat(message.header()).isEqualTo("100A01TX123200");
+        // length(10) + messageType(3) + transactionId(36) + code(4) = 53자
+        assertThat(message.header()).hasSize(53);
+        assertThat(message.header()).startsWith("100       ");  // length: 10자리
+        assertThat(message.header()).contains("A01");           // messageType: 3자리
         assertThat(message.data()).isEqualTo("data1data2data3");
         assertThat(message.totalLength()).isGreaterThan(0);
     }
@@ -94,8 +97,12 @@ class FldMessageBuilderTest {
         FldMessage message = builder.buildMessage(rawLog);
         String delimitedString = message.toDelimitedString();
 
-        // Then - header와 data 사이에만 delimiter
+        // Then - header와 data 사이에만 delimiter (header는 고정 길이 패딩 적용)
         assertThat(delimitedString).contains("|");
-        assertThat(delimitedString).isEqualTo("h1h2h3h4|body");
+        // h1(10자) + h2(3자) + h3(36자) + h4(4자) = 53자
+        String[] parts = delimitedString.split("\\|");
+        assertThat(parts).hasSize(2);
+        assertThat(parts[0]).hasSize(53);  // 패딩된 헤더
+        assertThat(parts[1]).isEqualTo("body");
     }
 }

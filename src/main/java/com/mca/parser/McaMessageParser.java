@@ -84,12 +84,15 @@ public class McaMessageParser {
         String[] headerFields = extractHeaderFields(fields, headerCount);
         String[] bodyFields = extractBodyFields(fields, headerCount);
 
-        // 4. 헤더/바디 문자열 생성 (delimiter 제거, 공백 보존)
-        String headerStr = String.join("", headerFields);
+        // 4. 헤더 패딩 적용 (headerFieldSpecs가 있을 경우)
+        String[] paddedHeaderFields = applyHeaderPadding(headerFields);
+
+        // 5. 헤더/바디 문자열 생성 (delimiter 제거, 패딩 적용)
+        String headerStr = String.join("", paddedHeaderFields);
         String bodyStr = String.join("", bodyFields);
 
-        // 5. 필드 맵 생성 (JSON용)
-        Map<String, String> headerMap = buildHeaderMap(headerFields);
+        // 6. 필드 맵 생성 (JSON용, 패딩된 값 사용)
+        Map<String, String> headerMap = buildHeaderMap(paddedHeaderFields, headerFields);
         List<String> bodyList = Arrays.asList(bodyFields);
 
         log.debug("파싱 완료: 헤더 {} 필드, 바디 {} 필드", headerFields.length, bodyFields.length);
@@ -163,39 +166,65 @@ public class McaMessageParser {
     }
 
     /**
-     * 헤더 필드 맵 생성 (JSON용)
-     * - headerFieldSpecs가 있으면 고정 길이 패딩 적용
-     * - 없으면 기존 방식 (headerFieldNames 또는 자동 생성)
+     * 헤더 필드에 패딩 적용
+     * - headerFieldSpecs가 있으면 고정 길이로 패딩
+     * - 없으면 원본 그대로 반환
      */
-    private Map<String, String> buildHeaderMap(String[] headerFields) {
+    private String[] applyHeaderPadding(String[] headerFields) {
+        // headerFieldSpecs가 없으면 원본 반환
+        if (config.getHeaderFieldSpecs() == null || config.getHeaderFieldSpecs().isEmpty()) {
+            return headerFields;
+        }
+
+        var fieldSpecs = config.getHeaderFieldSpecs();
+        String[] paddedFields = new String[headerFields.length];
+
+        for (int i = 0; i < headerFields.length; i++) {
+            int fieldLength = 0;
+
+            // Spec에서 길이 가져오기
+            if (i < fieldSpecs.size()) {
+                fieldLength = fieldSpecs.get(i).getLength();
+            }
+
+            // 패딩 적용
+            paddedFields[i] = padValue(headerFields[i], fieldLength);
+        }
+
+        return paddedFields;
+    }
+
+    /**
+     * 헤더 필드 맵 생성 (JSON용)
+     * - paddedFields: 패딩된 값 (맵에 저장될 값)
+     * - originalFields: 원본 값 (필드명 결정용, 하위 호환성)
+     */
+    private Map<String, String> buildHeaderMap(String[] paddedFields, String[] originalFields) {
         Map<String, String> map = new LinkedHashMap<>();
 
-        // 1. headerFieldSpecs 우선 사용 (고정 길이 패딩)
+        // 1. headerFieldSpecs 우선 사용
         if (config.getHeaderFieldSpecs() != null && !config.getHeaderFieldSpecs().isEmpty()) {
             var fieldSpecs = config.getHeaderFieldSpecs();
 
-            for (int i = 0; i < headerFields.length; i++) {
+            for (int i = 0; i < paddedFields.length; i++) {
                 String fieldName;
-                int fieldLength = 0;
 
-                // Spec에서 필드명과 길이 가져오기
+                // Spec에서 필드명 가져오기
                 if (i < fieldSpecs.size()) {
                     fieldName = fieldSpecs.get(i).getName();
-                    fieldLength = fieldSpecs.get(i).getLength();
                 } else {
                     fieldName = "header" + i;
                 }
 
-                // 값에 공백 패딩 적용
-                String paddedValue = padValue(headerFields[i], fieldLength);
-                map.put(fieldName, paddedValue);
+                map.put(fieldName, paddedFields[i]);
             }
         }
         // 2. 기존 방식 (headerFieldNames 또는 자동 생성)
         else {
+            @SuppressWarnings("deprecation")
             var fieldNames = config.getHeaderFieldNames();
 
-            for (int i = 0; i < headerFields.length; i++) {
+            for (int i = 0; i < paddedFields.length; i++) {
                 String fieldName;
 
                 if (fieldNames != null && i < fieldNames.size()) {
@@ -204,7 +233,7 @@ public class McaMessageParser {
                     fieldName = "header" + i;
                 }
 
-                map.put(fieldName, headerFields[i]);
+                map.put(fieldName, paddedFields[i]);
             }
         }
 
