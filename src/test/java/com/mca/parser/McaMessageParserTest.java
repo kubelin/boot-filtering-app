@@ -215,7 +215,7 @@ class McaMessageParserTest {
     }
 
     @Test
-    @DisplayName("헤더 필드 고정 길이 패딩 (긴 값)")
+    @DisplayName("헤더 필드 고정 길이 패딩 (긴 값 - 오른쪽 자르기)")
     void parse_고정길이패딩_긴값() {
         // Given
         config.setHeaderFieldSpecs(List.of(
@@ -230,10 +230,10 @@ class McaMessageParserTest {
         // When
         McaMessage result = parser.parse(rawLog);
 
-        // Then - 값이 고정 길이보다 크면 그대로 유지
+        // Then - 값이 고정 길이보다 크면 오른쪽 자르기
         assertThat(result.headerFields()).hasSize(2);
-        assertThat(result.headerFields().get("field1")).isEqualTo("veryLongValue");  // 원본 유지
-        assertThat(result.headerFields().get("field2")).isEqualTo("12345");           // 원본 유지
+        assertThat(result.headerFields().get("field1")).isEqualTo("veryL");  // 5자로 자름
+        assertThat(result.headerFields().get("field2")).isEqualTo("123");    // 3자로 자름
     }
 
     @Test
@@ -255,5 +255,49 @@ class McaMessageParserTest {
         // Then - 길이 0이면 패딩 안 함
         assertThat(result.headerFields().get("field1")).isEqualTo("abc");
         assertThat(result.headerFields().get("field2")).isEqualTo("12");
+    }
+
+    @Test
+    @DisplayName("헤더 필드 고정 길이 - 정확히 같은 길이")
+    void parse_고정길이_정확한길이() {
+        // Given
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("field1", 3),
+            new com.mca.parser.model.HeaderFieldSpec("field2", 5)
+        ));
+        config.setHeaderColumnCount(2);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|ABC|12345[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then - 길이가 정확히 같으면 그대로 반환
+        assertThat(result.headerFields().get("field1")).isEqualTo("ABC");
+        assertThat(result.headerFields().get("field2")).isEqualTo("12345");
+    }
+
+    @Test
+    @DisplayName("헤더 필드 고정 길이 - 통합 테스트 (짧음/같음/긺)")
+    void parse_고정길이_통합테스트() {
+        // Given
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("short", 10),   // 짧은 값
+            new com.mca.parser.model.HeaderFieldSpec("exact", 5),    // 정확한 값
+            new com.mca.parser.model.HeaderFieldSpec("long", 3)      // 긴 값
+        ));
+        config.setHeaderColumnCount(3);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|ABC|12345|TOOLONG[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then
+        assertThat(result.headerFields().get("short")).isEqualTo("ABC       ");  // 10자리 패딩
+        assertThat(result.headerFields().get("exact")).isEqualTo("12345");       // 5자리 그대로
+        assertThat(result.headerFields().get("long")).isEqualTo("TOO");          // 3자리로 자름
     }
 }

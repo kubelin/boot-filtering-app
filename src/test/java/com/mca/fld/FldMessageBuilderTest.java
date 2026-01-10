@@ -81,10 +81,15 @@ class FldMessageBuilderTest {
         // When
         FldMessage message = builder.buildMessage(rawLog);
 
-        // Then - 공백이 그대로 유지됨
-        assertThat(message.header()).contains("100   ");
-        assertThat(message.header()).contains("A01  ");
-        assertThat(message.data()).contains("data with spaces");
+        // Then - 고정 길이 적용 (application.yml: length=10, 3, 36, 4)
+        // "100   " (6자) → 10자로 패딩
+        // "A01  " (5자) → 3자로 자름 "A01"
+        // "TX123              " (22자) → 36자로 패딩
+        // "200     " (8자) → 4자로 자름 "200 "
+        assertThat(message.header()).hasSize(53);  // 10+3+36+4
+        assertThat(message.header()).startsWith("100   ");  // 10자리
+        assertThat(message.header()).contains("A01");        // 3자리
+        assertThat(message.data()).isEqualTo("data with spaces");
     }
 
     @Test

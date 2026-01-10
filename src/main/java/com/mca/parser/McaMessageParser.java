@@ -241,20 +241,32 @@ public class McaMessageParser {
     }
 
     /**
-     * 값에 공백 패딩 적용
+     * 값에 고정 길이 적용 (패딩 또는 자르기)
      * - 값의 길이가 지정된 길이보다 작으면 오른쪽에 공백 추가
-     * - 값의 길이가 지정된 길이보다 크거나 같으면 그대로 반환
+     * - 값의 길이가 지정된 길이와 같으면 그대로 반환
+     * - 값의 길이가 지정된 길이보다 크면 오른쪽 자르기 (왼쪽 length만큼 유지)
      *
      * @param value 원본 값
-     * @param length 목표 길이 (0이면 패딩 안 함)
-     * @return 패딩된 값
+     * @param length 목표 길이 (0이면 처리 안 함)
+     * @return 고정 길이로 조정된 값
      */
     private String padValue(String value, int length) {
-        if (length <= 0 || value.length() >= length) {
+        // 길이가 0이면 처리 안 함
+        if (length <= 0) {
             return value;
         }
 
-        // 오른쪽에 공백 추가
-        return String.format("%-" + length + "s", value);
+        // 값이 목표 길이보다 긴 경우: 오른쪽 자르기
+        if (value.length() > length) {
+            return value.substring(0, length);
+        }
+
+        // 값이 목표 길이보다 짧은 경우: 오른쪽에 공백 추가
+        if (value.length() < length) {
+            return String.format("%-" + length + "s", value);
+        }
+
+        // 값이 목표 길이와 같은 경우: 그대로 반환
+        return value;
     }
 }
