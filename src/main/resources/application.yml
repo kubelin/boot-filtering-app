@@ -4,6 +4,23 @@ spring:
   profiles:
     active: local
 
+  # MariaDB Database Configuration
+  datasource:
+    url: jdbc:mariadb://172.30.1.120:3306/commonDB
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: commondb_admin
+    password: AdminPass123!
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: none  # 운영 환경에서는 none 사용 (수동 DDL 관리)
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MariaDBDialect
+
 # MCA Parser Configuration
 mca:
   parser:
