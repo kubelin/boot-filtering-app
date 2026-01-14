@@ -129,12 +129,6 @@ public class McaMessageParser {
             afterPrefix = afterPrefix.substring(0, dataEnd);
         }
 
-        // 시작이 delimiter면 제거
-        String delimiter = config.getDelimiter();
-        if (afterPrefix.startsWith(delimiter)) {
-            afterPrefix = afterPrefix.substring(delimiter.length());
-        }
-
         return afterPrefix.trim();
     }
 

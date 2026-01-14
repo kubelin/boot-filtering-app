@@ -300,4 +300,58 @@ class McaMessageParserTest {
         assertThat(result.headerFields().get("exact")).isEqualTo("12345");       // 5자리 그대로
         assertThat(result.headerFields().get("long")).isEqualTo("TOO");          // 3자리로 자름
     }
+
+    @Test
+    @DisplayName("빈 필드 처리 - 연속된 구분자")
+    void parse_빈필드_연속구분자() {
+        // Given - "||01| |" 형식
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("field1", 10),
+            new com.mca.parser.model.HeaderFieldSpec("field2", 10),
+            new com.mca.parser.model.HeaderFieldSpec("field3", 10),
+            new com.mca.parser.model.HeaderFieldSpec("field4", 10)
+        ));
+        config.setHeaderColumnCount(4);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":|first||01| |bodyData[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then
+        assertThat(result.headerFields()).hasSize(4);
+        assertThat(result.headerFields().get("field1")).isEqualTo("first     ");  // "first" → 10자
+        assertThat(result.headerFields().get("field2")).isEqualTo("          ");  // "" → 10자 공백
+        assertThat(result.headerFields().get("field3")).isEqualTo("01        ");  // "01" → 10자
+        assertThat(result.headerFields().get("field4")).isEqualTo("          ");  // " " → 10자 (공백 1개 + 9개)
+
+        // header 문자열도 확인 (delimiter 제거)
+        assertThat(result.header()).hasSize(40);  // 10*4
+        assertThat(result.body()).isEqualTo("bodyData");
+    }
+
+    @Test
+    @DisplayName("빈 필드 처리 - 시작부터 빈값")
+    void parse_빈필드_시작부터() {
+        // Given - "|value|" 형식
+        config.setHeaderFieldSpecs(List.of(
+            new com.mca.parser.model.HeaderFieldSpec("field1", 5),
+            new com.mca.parser.model.HeaderFieldSpec("field2", 5),
+            new com.mca.parser.model.HeaderFieldSpec("field3", 5)
+        ));
+        config.setHeaderColumnCount(3);
+        parser = new McaMessageParser(config);
+
+        String rawLog = ":||value|[EXT]";
+
+        // When
+        McaMessage result = parser.parse(rawLog);
+
+        // Then
+        assertThat(result.headerFields()).hasSize(3);
+        assertThat(result.headerFields().get("field1")).isEqualTo("     ");   // "" → 5자 공백
+        assertThat(result.headerFields().get("field2")).isEqualTo("value");   // "value" → 5자 그대로
+        assertThat(result.headerFields().get("field3")).isEqualTo("     ");   // "" → 5자 공백
+    }
 }
