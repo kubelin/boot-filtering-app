@@ -27,6 +27,9 @@ dependencies {
     // Database
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
 
+    // Cache
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
     // Configuration
     implementation 'org.springframework.boot:spring-boot-configuration-processor'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
