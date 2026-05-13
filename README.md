@@ -392,4 +392,43 @@ MCA Parsing Team
 
 ## 🔗 GitHub
 
-Repository: [boot-filtering-app](https://github.com/kubelin/boot-filtering-app)
+Repository: [boot-filtering-app](https://github.com/kubelin/boot-filtering-
+
+CREATE OR REPLACE PROCEDURE SP_SEARCH_CUSTOMER (
+    IN  P_KEYWORD    VARCHAR(100),
+    IN  P_SEARCH_TYPE VARCHAR(10),   -- 'PREFIX', 'SUFFIX', 'CONTAIN'
+    OUT P_RESULT_CNT INTEGER
+)
+LANGUAGE SQL
+SPECIFIC SP_SEARCH_CUSTOMER
+RESULT SETS 1
+BEGIN
+    DECLARE V_PATTERN VARCHAR(102);
+    DECLARE CUR_RESULT CURSOR WITH RETURN FOR
+        SELECT CUST_ID, CUST_NAME, ACCOUNT_NO, REG_DT
+        FROM   TB_CUSTOMER
+        WHERE  CUST_NAME LIKE V_PATTERN
+        FETCH FIRST 1000 ROWS ONLY;   -- 결과 폭주 방지
+
+    -- 검색 타입에 따라 패턴 구성
+    SET V_PATTERN = CASE P_SEARCH_TYPE
+        WHEN 'PREFIX'  THEN P_KEYWORD || '%'
+        WHEN 'SUFFIX'  THEN '%' || P_KEYWORD
+        WHEN 'CONTAIN' THEN '%' || P_KEYWORD || '%'
+        ELSE P_KEYWORD
+    END;
+
+    -- 카운트 (선택적, 성능 영향 큼)
+    SELECT COUNT(*) INTO P_RESULT_CNT
+    FROM   TB_CUSTOMER
+    WHERE  CUST_NAME LIKE V_PATTERN
+    FETCH FIRST 1001 ROWS ONLY;       -- 1000 초과 여부만 확인
+
+    OPEN CUR_RESULT;
+END@
+
+
+
+
+
+
